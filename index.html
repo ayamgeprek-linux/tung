@@ -3,180 +3,90 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Debt Tracker GenZ</title>
+<title>Debt Tracker</title>
 <style>
-body{
-font-family:Arial,sans-serif;
-margin:0;
-padding:0;
-background:linear-gradient(135deg,#0f172a,#1e293b);
-color:#fff;
-}
-.wrap{
-max-width:430px;
-margin:auto;
-padding:16px;
-}
-.header{
-background:rgba(255,255,255,0.08);
-backdrop-filter:blur(10px);
-padding:18px;
-border-radius:20px;
-margin-bottom:15px;
-box-shadow:0 10px 30px rgba(0,0,0,0.3);
-}
-h2{margin:0}
-p{font-size:12px;color:#cbd5e1}
-input,button{
-width:100%;
-padding:14px;
-border-radius:14px;
-border:none;
-margin-bottom:10px;
-box-sizing:border-box;
-}
-input{
-background:rgba(255,255,255,0.1);
-color:white;
-outline:none;
-}
-input::placeholder{color:#94a3b8}
-button{
-background:linear-gradient(135deg,#6366f1,#22c55e);
-color:white;
-font-weight:bold;
-}
-.card{
-background:rgba(255,255,255,0.08);
-backdrop-filter:blur(10px);
-padding:15px;
-border-radius:18px;
-margin-top:12px;
-box-shadow:0 8px 20px rgba(0,0,0,0.3);
-}
+*{box-sizing:border-box} 
+body{margin:0;font-family:Arial;background:linear-gradient(180deg,#09090b,#111827,#1e1b4b);padding:14px;color:#fff}
+.wrap{max-width:430px;margin:auto}
+.box,.card{background:rgba(255,255,255,.07);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08);padding:16px;border-radius:24px;margin-bottom:14px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+h2{margin:0;font-size:24px}
+p{color:#94a3b8;font-size:12px}
+input,button{width:100%;padding:15px;border-radius:16px;border:none;margin-top:9px}
+input{background:rgba(255,255,255,.08);color:#fff}
+button{background:linear-gradient(135deg,#8b5cf6,#3b82f6);color:white;font-weight:bold}
+.del{background:linear-gradient(135deg,#ef4444,#dc2626)}
 .small{font-size:12px;color:#cbd5e1}
-.totalbar{
-position:sticky;
-top:0;
-background:rgba(15,23,42,0.9);
-backdrop-filter:blur(10px);
-padding:12px;
-border-radius:14px;
-margin-bottom:10px;
-}
-.badge{
-display:inline-block;
-padding:4px 10px;
-border-radius:999px;
-background:#22c55e;
-font-size:11px;
-margin-top:5px;
-}
+.badge{display:inline-block;background:#22c55e;padding:6px 10px;border-radius:999px;font-size:11px;margin-top:8px}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.mini{padding:10px;border-radius:16px;background:rgba(255,255,255,.05);font-size:12px}
 </style>
 </head>
 <body>
 <div class='wrap'>
-
-<div class='header'>
+<div class='box'>
 <h2>💸 Debt Tracker</h2>
-<p>biar hidup keliatan jelas walau isi dompet tetap gelap</p>
+<p>Karena otak bukan Excel keliling.</p>
+<div id='summary'></div>
 </div>
 
-<div class='totalbar' id='totalbar'>Total loading...</div>
-
-<input id='gaji' type='number' placeholder='Gaji per bulan'>
+<div class='box'>
+<input id='gaji' oninput='formatInput(this)' placeholder='Gaji per bulan contoh 3.500.000'>
 <input id='nama' placeholder='Nama APK'>
-<input id='cicilan' type='number' placeholder='Cicilan per bulan'>
-<input id='bulan' type='number' placeholder='Sisa bulan cicilan'>
+<input id='cicilan' oninput='formatInput(this)' placeholder='Cicilan per bulan contoh 300.000'>
+<input id='bulan' type='number' placeholder='Sisa berapa kali?'>
 <input id='start' type='number' placeholder='Mulai bulan (opsional)'>
-
-<button onclick='tambah()'>+ Tambah Utang</button>
-
+<button onclick='tambah()'>+ Tambah Cicilan</button>
+<button class='del' onclick='resetData()'>Hapus Semua</button>
+</div>
+<div id='listUtang'></div>
 <div id='hasil'></div>
 </div>
-
 <script>
-let data=[]
-
-function tambah(){
-let nama=document.getElementById('nama')
-let cicilan=document.getElementById('cicilan')
-let bulan=document.getElementById('bulan')
-let start=document.getElementById('start')
-
-if(!nama.value||!cicilan.value||!bulan.value) return alert('isi dulu woi')
-
-data.push({
- nama:nama.value,
- cicilan:+cicilan.value,
- bulan:+bulan.value,
- start:+start.value||1
-})
-
-nama.value=''
-cicilan.value=''
-bulan.value=''
-start.value=''
-
+let data=JSON.parse(localStorage.getItem('utang'))||[]
 render()
+
+function save(){localStorage.setItem('utang',JSON.stringify(data))}
+function angka(v){return Number(String(v).replace(/\./g,''))||0}
+function formatInput(el){
+let n=angka(el.value)
+el.value=n? n.toLocaleString('id-ID').replace(/,/g,'.'):''
 }
-
+function tambah(){
+let n=nama.value,c=angka(cicilan.value),b=angka(bulan.value),s=angka(start.value)||1
+if(!n||!c||!b)return alert('isi dulu njir')
+data.push({id:Date.now(),nama:n,cicilan:c,bulan:b,start:s})
+nama.value='';cicilan.value='';bulan.value='';start.value=''
+save();render()
+}
+function hapus(id){data=data.filter(x=>x.id!=id);save();render()}
+function resetData(){localStorage.removeItem('utang');data=[];render()}
 function render(){
-let gaji=+document.getElementById('gaji').value||0
-let jadwal={}
+let g=angka(gaji.value)
+let jadwal={};let total=0
 
-let totalSemua=0
-
-// build schedule
+listUtang.innerHTML=data.map(x=>`<div class='card'>${x.nama}<br><span class='small'>Rp ${x.cicilan.toLocaleString()} | ${x.bulan}x</span><button class='del' onclick='hapus(${x.id})'>Hapus</button></div>`).join('')
 
 data.forEach(x=>{
- totalSemua += x.cicilan * x.bulan
-
- for(let i=x.start;i<x.start+x.bulan;i++){
- if(!jadwal[i])jadwal[i]=[]
- jadwal[i].push({...x,finish:x.start+x.bulan-1})
- }
-})
-
-// total monthly max
-let maxMonth=0
-let monthlyTotal=[]
-
-Object.keys(jadwal).forEach(m=>{
- let sum=jadwal[m].reduce((a,b)=>a+b.cicilan,0)
- monthlyTotal.push(sum)
- if(m>maxMonth) maxMonth=+m
-})
-
-let avgMonthly = monthlyTotal.length ? (monthlyTotal.reduce((a,b)=>a+b,0)/monthlyTotal.length) : 0
-
-// total bar
-
-document.getElementById('totalbar').innerHTML=`
-💰 Total Utang: Rp ${totalSemua.toLocaleString()} <br>
-📊 Rata-rata cicilan/bln: Rp ${avgMonthly.toLocaleString()} <br>
-🔥 Puncak beban: Rp ${Math.max(...monthlyTotal,0).toLocaleString()}
-`
-
-let html=''
-
-Object.keys(jadwal).sort((a,b)=>a-b).forEach(bln=>{
-let total=jadwal[bln].reduce((a,b)=>a+b.cicilan,0)
-let selesai=jadwal[bln].filter(x=>x.finish==bln)
-
-html+=`
-<div class='card'>
-<h3>📅 Bulan ${bln}</h3>
-<div>Total Cicilan: Rp ${total.toLocaleString()}</div>
-<div>Sisa Gaji: Rp ${(gaji-total).toLocaleString()}</div>
-<div class='small'>${jadwal[bln].map(x=>`• ${x.nama} Rp ${x.cicilan.toLocaleString()} (s.d bln ${x.finish})`).join('<br>')}</div>
-${selesai.length?`<div class='badge'>Lunas: ${selesai.map(x=>x.nama).join(', ')}</div>`:''}
-</div>
-`
-})
-
-document.getElementById('hasil').innerHTML=html
+total+=x.cicilan*x.bulan
+for(let i=x.start;i<x.start+x.bulan;i++){
+if(!jadwal[i])jadwal[i]=[]
+jadwal[i].push({...x,finish:x.start+x.bulan-1})
 }
+})
+
+let bulanan=[]
+Object.keys(jadwal).forEach(x=>bulanan.push(jadwal[x].reduce((a,b)=>a+b.cicilan,0)))
+summary.innerHTML=`<div class='stat'><div class='mini'>💰 Total<br>Rp ${total.toLocaleString('id-ID')}</div><div class='mini'>📊 Rata²<br>Rp ${(bulanan.reduce((a,b)=>a+b,0)/(bulanan.length||1)).toLocaleString('id-ID')}</div><div class='mini'>🔥 Puncak<br>Rp ${Math.max(...bulanan,0).toLocaleString('id-ID')}</div><div class='mini'>📦 Cicilan<br>${data.length} aktif</div></div>`
+
+hasil.innerHTML=''
+Object.keys(jadwal).sort((a,b)=>a-b).forEach(bln=>{
+let t=jadwal[bln].reduce((a,b)=>a+b.cicilan,0)
+let selesai=jadwal[bln].filter(x=>x.finish==bln)
+hasil.innerHTML+=`<div class='card'><b>📅 Bulan ${bln}</b><br>Total: Rp ${t.toLocaleString()}<br>Sisa gaji: Rp ${(g-t).toLocaleString()}<div class='small'>${jadwal[bln].map(x=>`• ${x.nama}`).join('<br>')}</div>${selesai.length?`<div class='badge'>✅ ${selesai.map(x=>x.nama).join(', ')} lunas</div>`:''}</div>`
+})
+save()
+}
+gaji.oninput=render
 </script>
 </body>
 </html>
